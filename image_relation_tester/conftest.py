@@ -23,7 +23,7 @@ def compare_images(template_path: Path, image_path: Path, grayscale: bool = True
 
 
 def find_two_images(script_dir: Path):
-    exts = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
+    exts = {".png"}
     images = sorted(
         [p for p in script_dir.iterdir() if p.is_file() and p.suffix.lower() in exts]
     )
@@ -44,15 +44,7 @@ def main():
         grayscale=True,
     )
 
-    print(f"template: {template_path.name}")
-    print(f"image:    {image_path.name}")
-    print("mode:     grayscale")
-    print("method:   cv2.TM_CCOEFF_NORMED")
-    print(f"score:    {score:.6f}")
-    print(f"found at: {loc}")
-    print(f"template size: {template_shape[1]}x{template_shape[0]}")
-    print(f"image size:    {image_shape[1]}x{image_shape[0]}")
-
+    print(score)
 
 if __name__ == "__main__":
     main()
