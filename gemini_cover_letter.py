@@ -34,7 +34,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 # =========================
 
 BASE_DIR = Path(__file__).resolve().parent
-API_KEY = "AIzaSyDMEmEulCuwZ07w1P7M-lky6-thSTYGzx8"
+API_KEY = os.getenv("GEMINI_API_KEY")
 MODEL_NAME = "gemini-2.5-flash"
 OUTPUT_DIR = BASE_DIR / "generated_cover_letters"
 

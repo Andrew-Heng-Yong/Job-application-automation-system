@@ -55,10 +55,19 @@ In future developments, we plan to automate the reference images capturing proce
     
 5.  If unsure the computed diffrence between two images, use `conftest.py` to check
 
-6.  Insert your gemini api key and select model in `gemini_cover_letter.py`
+6.  Upload Gemini API key by running `$env:GEMINI_API_KEY="your_api_key_here"` in the terminal of your IDE
+
+7.  select model in `gemini_cover_letter.py`.
 
 8. Need to rearrange WaterlooWork such that its Level column is fully shown.
-    
+
+10. When uploading cover letter, make sure the folder `generated_cover_letters/` is open by default.
+
+## Adding new resume:
+
+ - Add new resume to `resume/` folder
+ - Upload resume catalogue in `generate_cover_letter.py`
+ - Add resume to WaterlooWork and take refrence image
 
 ## Project Structure
 
