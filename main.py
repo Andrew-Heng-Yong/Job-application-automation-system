@@ -172,7 +172,7 @@ def recover_from_stale_apply_page() -> bool:
     pyautogui.hotkey("ctrl", "w")
     time.sleep(1.5)
 
-    if image_exists(img("ww.png")):
+    if image_exists(img("ww_home_bar.png")):
         log("Returned to search page with Control+W.")
         return True
 
@@ -180,7 +180,7 @@ def recover_from_stale_apply_page() -> bool:
     pyautogui.press("esc")
     time.sleep(1.0)
 
-    if image_exists(img("ww.png")):
+    if image_exists(img("ww_home_bar.png")):
         log("Returned to search page with Esc.")
         return True
 
@@ -192,9 +192,9 @@ def recover_from_stale_apply_page() -> bool:
 # -----------------------------
 def wait_until_search_page_ready() -> bool:
     log("Waiting for search page...")
-    ready = wait_for_image(img("ww.png"), timeout=PAGE_READY_TIMEOUT)
+    ready = wait_for_image(img("ww_home_bar.png"), timeout=PAGE_READY_TIMEOUT)
     if not ready:
-        log("ww.png not found. Stopping.")
+        log("ww_home_bar.png not found. Stopping.")
         save_debug_screenshot("job_search_not_ready")
         return False
     log("ready.")
