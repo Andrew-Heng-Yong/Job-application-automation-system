@@ -29,19 +29,23 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
 
-# =========================
-# Local imports
-# =========================
-from gemini_config import API_KEY, BASE_DIR, MODEL_NAME, OUTPUT_DIR
-from gemini_prompts import (
+from .gconfig_loader import (
+    API_KEY,
+    BASE_DIR,
+    MODEL_NAME,
+    OUTPUT_DIR,
     RESUME_SELECTION_SYSTEM_PROMPT,
     RESUME_SELECTION_USER_PROMPT_TEMPLATE,
     COVER_LETTER_SYSTEM_PROMPT,
     COVER_LETTER_USER_PROMPT_TEMPLATE,
     MINOR_CHANGE_SYSTEM_PROMPT,
     MINOR_CHANGE_USER_PROMPT_TEMPLATE,
+    RESUME_CATALOG,
+    ADDITIONAL_PERSONAL_INFORMATION,
+    COVER_LETTER_WORD_LIMIT,
 )
-from resume_catalog import RESUME_CATALOG
+
+
 # =========================
 # Internal helpers
 # =========================
@@ -116,7 +120,12 @@ def _select_resume_and_company(client: genai.Client, job_description: str) -> di
 def _find_resume(selected_resume_name: str) -> dict[str, str]:
     for item in RESUME_CATALOG:
         if item["name"] == selected_resume_name:
-            return item
+            # Resolve resume file under the project root's 'resume' directory to avoid
+            # package-local resume directories.
+            project_root = Path(__file__).resolve().parent.parent
+            orig = Path(item.get("path", ""))
+            resume_file = project_root / "resume" / orig.name
+            return {"name": item["name"], "summary": item.get("summary", ""), "path": str(resume_file)}
     raise FileNotFoundError(f"Resume '{selected_resume_name}' was not found in RESUME_CATALOG.")
 
 
@@ -140,10 +149,14 @@ def _sanitize_filename(text: str) -> str:
 
 
 def _save_pdf(text: str, company_name: str, resume_name: str, suffix: str) -> Path:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    # Always write output to the project-level generated_cover_letters directory
+    project_root = Path(__file__).resolve().parent.parent
+    out_dir = project_root / "generated_cover_letters"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
     company_slug = _sanitize_filename(company_name or "unknown_company")
     resume_slug = _sanitize_filename(resume_name)
-    output_path = OUTPUT_DIR / f"{company_slug}_{resume_slug}_{suffix}.pdf"
+    output_path = out_dir / f"{company_slug}_{resume_slug}_{suffix}.pdf"
 
     styles = getSampleStyleSheet()
     normal = styles["Normal"]
@@ -174,6 +187,11 @@ def _generate_letter_text(
         resume_text=resume_text,
         emphasis_points="\n".join(f"- {point}" for point in emphasis_points),
     )
+    # Append additional personal information and word limit instructions for new letters
+    if ADDITIONAL_PERSONAL_INFORMATION:
+        prompt += "\n\nAdditional personal information:\n" + ADDITIONAL_PERSONAL_INFORMATION
+    if COVER_LETTER_WORD_LIMIT:
+        prompt += f"\n\nPlease keep the cover letter within {COVER_LETTER_WORD_LIMIT} words."
     response = client.models.generate_content(
         model=MODEL_NAME,
         contents=prompt,
@@ -182,7 +200,8 @@ def _generate_letter_text(
             temperature=0.4,
         ),
     )
-    return response.text.strip()
+    text = response.text.strip()
+    return text
 
 
 def _generate_minor_change_letter_text(

@@ -1,0 +1,34 @@
+{
+  "API_KEY": "Your-API-key-here",
+  "MODEL_NAME": "gemini-2.5-flash",
+  "OUTPUT_DIR": "generated_cover_letters",
+
+  "RESUME_SELECTION_SYSTEM_PROMPT": "You are helping choose the best resume version for a job application.\nPick exactly one resume from the provided catalog.\nPrefer conservative extraction over guessing.\nReturn JSON only.",
+
+  "RESUME_SELECTION_USER_PROMPT_TEMPLATE": "Job description:\n{job_description}\n\nResume catalog:\n{resume_catalog}\n\nTasks:\n1. Select the single best resume for this job.\n2. Extract the company name from the job description if it is explicitly stated.\n3. Provide 3 to 6 emphasis points to use in the cover letter.\n\nReturn JSON with keys:\n- company_name\n- selected_resume_name\n- rationale\n- emphasis_points\n",
+
+  "COVER_LETTER_SYSTEM_PROMPT": "You write concise, specific, professional cover letters.\nUse only the provided materials.\nDo not invent experience.\nDo not mention missing information.\nOutput only the final cover letter text.",
+
+  "COVER_LETTER_USER_PROMPT_TEMPLATE": "Write a tailored cover letter.\n\nCompany: {company_name}\n\nJob description:\n{job_description}\n\nSelected resume name: {resume_name}\nSelected resume text:\n{resume_text}\n\nEmphasis points:\n{emphasis_points}\n",
+
+  "MINOR_CHANGE_SYSTEM_PROMPT": "You write concise, specific, professional cover letters.\nYou are revising for a new role at the same company.\nKeep continuity with the previous cover letter, but introduce only minor changes to fit the new job.\nAvoid copying long phrases verbatim.\nUse only the provided materials.\nOutput only the final cover letter text.",
+
+  "MINOR_CHANGE_USER_PROMPT_TEMPLATE": "Write a tailored cover letter for a new role at the same company.\n\nCompany: {company_name}\n\nJob description:\n{job_description}\n\nSelected resume name: {resume_name}\nSelected resume text:\n{resume_text}\n\nEmphasis points:\n{emphasis_points}\n\nUse the uploaded previous cover letter PDF as context.\nPreserve general tone and motivation, but make minor changes for the new role.\n",
+
+  "ADDITIONAL_PERSONAL_INFORMATION": "use them selectively based on the job description: your info here",
+
+  "COVER_LETTER_WORD_LIMIT": 150,
+
+  "RESUME_CATALOG": [
+    {
+      "name": "general",
+      "summary": "General software, programming, analytics, and broad technical experience.",
+      "path": "resume/general.pdf"
+    },
+    {
+      "name": "software_dev",
+      "summary": "Software development, coding, implementation, debugging, and developer workflows.",
+      "path": "resume/software_dev.pdf"
+    }
+  ]
+}
