@@ -1,5 +1,5 @@
 {
-  "API_KEY": "Your-API-key-here",
+  "API_KEY": "apikeyhere",
   "MODEL_NAME": "gemini-2.5-flash",
   "OUTPUT_DIR": "generated_cover_letters",
 
@@ -15,20 +15,22 @@
 
   "MINOR_CHANGE_USER_PROMPT_TEMPLATE": "Write a tailored cover letter for a new role at the same company.\n\nCompany: {company_name}\n\nJob description:\n{job_description}\n\nSelected resume name: {resume_name}\nSelected resume text:\n{resume_text}\n\nEmphasis points:\n{emphasis_points}\n\nUse the uploaded previous cover letter PDF as context.\nPreserve general tone and motivation, but make minor changes for the new role.\n",
 
-  "ADDITIONAL_PERSONAL_INFORMATION": "use them selectively based on the job description: your info here",
+  "ADDITIONAL_PERSONAL_INFORMATION": "use them selectively based on the job description: add stuff here",
 
   "COVER_LETTER_WORD_LIMIT": 150,
 
   "RESUME_CATALOG": [
     {
       "name": "general",
-      "summary": "General software, programming, analytics, and broad technical experience.",
-      "path": "resume/general.pdf"
+      "summary": "General software, programming, analytics, and broad technical experience."
     },
     {
       "name": "software_dev",
-      "summary": "Software development, coding, implementation, debugging, and developer workflows.",
-      "path": "resume/software_dev.pdf"
+      "summary": "Software development, coding, implementation, debugging, and developer workflows."
+    },
+    {
+      "name": "complete",
+      "summary": "complete resume with all experience, including detailed description, but this is too long for most postings"
     }
   ]
 }

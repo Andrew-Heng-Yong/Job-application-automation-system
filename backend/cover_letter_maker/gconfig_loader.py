@@ -1,14 +1,13 @@
 import json
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 with open(BASE_DIR / "gconfig.json", "r", encoding="utf-8") as f:
     _cfg = json.load(f)
 
 API_KEY = _cfg.get("API_KEY")
 MODEL_NAME = _cfg.get("MODEL_NAME")
-OUTPUT_DIR = BASE_DIR / _cfg.get("OUTPUT_DIR", "generated_cover_letters")
 
 RESUME_SELECTION_SYSTEM_PROMPT = _cfg.get("RESUME_SELECTION_SYSTEM_PROMPT")
 RESUME_SELECTION_USER_PROMPT_TEMPLATE = _cfg.get("RESUME_SELECTION_USER_PROMPT_TEMPLATE")
@@ -21,8 +20,6 @@ ADDITIONAL_PERSONAL_INFORMATION = _cfg.get("ADDITIONAL_PERSONAL_INFORMATION")
 COVER_LETTER_WORD_LIMIT = int(_cfg.get("COVER_LETTER_WORD_LIMIT", 150))
 
 RESUME_CATALOG = [
-    {"name": item["name"], "summary": item["summary"], "path": str(BASE_DIR / item["path"])}
+    {"name": item["name"], "summary": item["summary"]}
     for item in _cfg.get("RESUME_CATALOG", [])
 ]
-
-print(f"api key: {API_KEY}")

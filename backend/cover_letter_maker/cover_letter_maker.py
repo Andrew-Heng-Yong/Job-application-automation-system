@@ -31,9 +31,8 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
 from .gconfig_loader import (
     API_KEY,
-    BASE_DIR,
     MODEL_NAME,
-    OUTPUT_DIR,
+    BASE_DIR,
     RESUME_SELECTION_SYSTEM_PROMPT,
     RESUME_SELECTION_USER_PROMPT_TEMPLATE,
     COVER_LETTER_SYSTEM_PROMPT,
@@ -118,15 +117,10 @@ def _select_resume_and_company(client: genai.Client, job_description: str) -> di
 
 
 def _find_resume(selected_resume_name: str) -> dict[str, str]:
-    for item in RESUME_CATALOG:
-        if item["name"] == selected_resume_name:
-            # Resolve resume file under the project root's 'resume' directory to avoid
-            # package-local resume directories.
-            project_root = Path(__file__).resolve().parent.parent
-            orig = Path(item.get("path", ""))
-            resume_file = project_root / "resume" / orig.name
-            return {"name": item["name"], "summary": item.get("summary", ""), "path": str(resume_file)}
-    raise FileNotFoundError(f"Resume '{selected_resume_name}' was not found in RESUME_CATALOG.")
+    resume_file = BASE_DIR / "resume" / f"{selected_resume_name}.pdf"
+    if not resume_file.exists():
+        raise FileNotFoundError(f"Resume file not found: {resume_file}")
+    return {"name": selected_resume_name, "summary": "", "path": str(resume_file)}
 
 
 def _upload_file_and_extract_text(client: genai.Client, file_path: str | Path) -> str:
@@ -150,8 +144,7 @@ def _sanitize_filename(text: str) -> str:
 
 def _save_pdf(text: str, company_name: str, resume_name: str, suffix: str) -> Path:
     # Always write output to the project-level generated_cover_letters directory
-    project_root = Path(__file__).resolve().parent.parent
-    out_dir = project_root / "generated_cover_letters"
+    out_dir = BASE_DIR / "generated_cover_letters"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     company_slug = _sanitize_filename(company_name or "unknown_company")

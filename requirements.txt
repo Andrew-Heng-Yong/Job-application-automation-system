@@ -4,3 +4,4 @@ pillow
 keyboard
 pyperclip
 reportlab
+google-genai

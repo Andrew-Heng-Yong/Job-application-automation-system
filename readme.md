@@ -8,10 +8,13 @@ This project automates majority parts of WaterlooWork job application process. I
  1. Set execution policy if needed:
  `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
     
- 2. Activate the virtual environment:
+ 2. create virtual envrioment:
+ `python -m venv venv`
+
+ 3. Activate the virtual environment:
  `venv\Scripts\activate`
  
- 3. Install required packages:
+ 4. Install required packages:
  `pip  install  -r  requirements.txt`
  
  ## Requirements
@@ -55,7 +58,7 @@ In future developments, we plan to automate the reference images capturing proce
     
 5.  If unsure the computed diffrence between two images, use `conftest.py` to check
 
-6.  configure gemini including API key, select model, customize prompts in `cover_letter_maker\gconfig.json`.
+6.  configure gemini including API key, select model, customize prompts in `gconfig.json`.
 
 8. Need to rearrange WaterlooWork such that its Level column is fully shown.
 
@@ -69,11 +72,11 @@ In future developments, we plan to automate the reference images capturing proce
 
 ## Project Structure
 
--   `main.py` contains the main automation flow.
+-   `main.py` 
 
--   `core/ ` contains helper functions for the automation workflow
-    
--   `cover_letter_maker/` contains cover letter generation logic and configuration files.
+-   `gconfig.json` contains gemini configuration
+
+-   `backend/ ` contains the backend, including main automation flow
     
 -   `imgs/` stores reference screenshots used for image matching.
     
@@ -81,7 +84,7 @@ In future developments, we plan to automate the reference images capturing proce
 
 -   `generated_cover_letters/` contains generated cover letters
 
--   `image_relation_tester/` contains the image relation tester
+-   `backend/image_relation_tester/` contains the image relation tester
     
 
 ## Known Limitations

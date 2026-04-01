@@ -13,9 +13,10 @@ CHECK_INTERVAL = 0.35
 DEFAULT_TIMEOUT = 10
 SCROLL_STEP = -700
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 IMG_DIR = BASE_DIR / "imgs"
-OUTPUT_DIR = Path(BASE_DIR) / "generated_cover_letters"
+OUTPUT_DIR = BASE_DIR / "generated_cover_letters"
+DEBUG_DIR = BASE_DIR / "debug_screenshots"
 
 def img(name: str) -> str:
     return str(IMG_DIR / name)
@@ -30,7 +31,7 @@ def log(msg: str) -> None:
 
 
 def save_debug_screenshot(prefix: str = "debug") -> str:
-    path = BASE_DIR / f"{prefix}_{timestamp()}.png"
+    path = DEBUG_DIR / f"{prefix}_{timestamp()}.png"
     pyautogui.screenshot(str(path))
     log(f"Saved screenshot: {path.name}")
     return str(path)
