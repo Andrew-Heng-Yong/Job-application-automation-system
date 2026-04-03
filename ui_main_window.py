@@ -15,12 +15,12 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QDoubleSpinBox, QGridLayout,
-    QGroupBox, QHBoxLayout, QHeaderView, QLabel,
-    QLineEdit, QMainWindow, QMenuBar, QPlainTextEdit,
-    QPushButton, QScrollArea, QSizePolicy, QSpacerItem,
-    QSpinBox, QStatusBar, QTabWidget, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QAbstractSpinBox, QApplication, QDoubleSpinBox,
+    QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
+    QLabel, QLineEdit, QMainWindow, QMenuBar,
+    QPlainTextEdit, QPushButton, QScrollArea, QSizePolicy,
+    QSpacerItem, QSpinBox, QStatusBar, QTabWidget,
+    QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -120,7 +120,8 @@ class Ui_MainWindow(object):
 
         self.spin_post_apply_timeout = QSpinBox(self.groupBox_app_config)
         self.spin_post_apply_timeout.setObjectName(u"spin_post_apply_timeout")
-        self.spin_post_apply_timeout.setMaximum(99999)
+        self.spin_post_apply_timeout.setMaximum(100)
+        self.spin_post_apply_timeout.setStepType(QAbstractSpinBox.StepType.DefaultStepType)
         self.spin_post_apply_timeout.setValue(1)
 
         self.gridLayout_app_config.addWidget(self.spin_post_apply_timeout, 2, 3, 1, 1)
@@ -504,17 +505,29 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_run_stop.addItem(self.horizontalSpacer_run_left)
 
-        self.button_run = QPushButton(self.centralwidget)
-        self.button_run.setObjectName(u"button_run")
-        self.button_run.setMinimumSize(QSize(120, 0))
+        self.run = QPushButton(self.centralwidget)
+        self.run.setObjectName(u"run")
+        self.run.setMinimumSize(QSize(100, 0))
 
-        self.horizontalLayout_run_stop.addWidget(self.button_run)
+        self.horizontalLayout_run_stop.addWidget(self.run)
 
-        self.button_stop = QPushButton(self.centralwidget)
-        self.button_stop.setObjectName(u"button_stop")
-        self.button_stop.setMinimumSize(QSize(120, 0))
+        self.pause = QPushButton(self.centralwidget)
+        self.pause.setObjectName(u"pause")
+        self.pause.setMinimumSize(QSize(100, 0))
 
-        self.horizontalLayout_run_stop.addWidget(self.button_stop)
+        self.horizontalLayout_run_stop.addWidget(self.pause)
+
+        self.resume = QPushButton(self.centralwidget)
+        self.resume.setObjectName(u"resume")
+        self.resume.setMinimumSize(QSize(100, 0))
+
+        self.horizontalLayout_run_stop.addWidget(self.resume)
+
+        self.stop = QPushButton(self.centralwidget)
+        self.stop.setObjectName(u"stop")
+        self.stop.setMinimumSize(QSize(100, 0))
+
+        self.horizontalLayout_run_stop.addWidget(self.stop)
 
 
         self.verticalLayout_main.addLayout(self.horizontalLayout_run_stop)
@@ -530,7 +543,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -665,7 +678,9 @@ class Ui_MainWindow(object):
         self.text_logs.setPlaceholderText(QCoreApplication.translate("MainWindow", u"Logs will appear here...", None))
         self.button_clear_logs.setText(QCoreApplication.translate("MainWindow", u"Clear Logs", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_logs), QCoreApplication.translate("MainWindow", u"Logs", None))
-        self.button_run.setText(QCoreApplication.translate("MainWindow", u"Run", None))
-        self.button_stop.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
+        self.run.setText(QCoreApplication.translate("MainWindow", u"Run", None))
+        self.pause.setText(QCoreApplication.translate("MainWindow", u"Pause", None))
+        self.resume.setText(QCoreApplication.translate("MainWindow", u"Resume", None))
+        self.stop.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
     # retranslateUi
 

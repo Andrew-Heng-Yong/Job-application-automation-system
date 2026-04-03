@@ -8,7 +8,7 @@ import pyperclip
 import threading
 
 # Use shared stop_flag implementation so the same Event is visible across modules
-from backend.core.stop_flag import request_stop, clear_stop, is_stop_requested
+from backend.core.state_handler import request_stop, clear_stop, is_stop_requested
 
 from backend.cover_letter_maker.cover_letter_maker import (
     generate_cover_letter,
@@ -29,6 +29,7 @@ from backend.core.helpers import (
     copy_all_visible_text,
     extract_between_anchors,
     latest_generated_pdf_path,
+    wait_if_paused,
 )
 from backend.core.app_config_loader import load_app_config
 
@@ -58,6 +59,9 @@ LAST_RESUME_VERSION_NAME: str | None = None
 # -----------------------------
 
 def recover_from_stale_apply_page() -> bool:
+    if not wait_if_paused():
+        return False
+
     log("Stale page detected. Returning to search page...")
 
     # First try browser back (close tab)
@@ -85,6 +89,7 @@ def recover_from_stale_apply_page() -> bool:
 # Page checks
 # -----------------------------
 
+
 def wait_until_search_page_ready() -> bool:
     log("Waiting for search page...")
     ready = wait_for_image(img("ww_home_bar.png"), timeout=PAGE_READY_TIMEOUT)
@@ -107,6 +112,8 @@ def row_region_from_box(box):
 
 # can be edited later
 def row_has_target_level(region) -> bool:
+    if not wait_if_paused():
+        return False
     has_jr = image_exists(img("jr.png"), region=region)
     has_inter = image_exists(img("inter.png"), region=region)
     # has_sr = image_exists(img("sr.png"), region=region)
@@ -138,6 +145,9 @@ def find_job_to_apply():
         if is_stop_requested():
             log("Stop requested during job search.")
             return None
+        # Respect pause between pages
+        if not wait_if_paused():
+            return None
         target = find_best_apply_on_current_view()
         if target:
             return target
@@ -152,6 +162,9 @@ def find_job_to_apply():
 # Apply flow
 # -----------------------------
 def click_apply_and_wait_for_next_page(apply_pos) -> str | None:
+    if not wait_if_paused():
+        return None
+
     next_markers = [img("psq.png")]
     optional_marker = img("app_option.png")
     if file_exists(optional_marker):
@@ -180,6 +193,9 @@ def handle_prescreen_if_needed(page_type: str) -> None:
     if page_type != "psq":
         return
 
+    if not wait_if_paused():
+        raise RuntimeError("stop requested during prescreen wait")
+
     log("Prescreening detected. Waiting for application options page...")
     markers = [img("create_custome_package.png")]
     optional_marker = img("app_option.png")
@@ -199,6 +215,8 @@ def handle_prescreen_if_needed(page_type: str) -> None:
 # Step 5
 # -----------------------------
 def open_quickview() -> bool:
+    if not wait_if_paused():
+        return False
     if not click_image(img("quick_view.png"), timeout=10):
         log("Could not click quick_view.png")
         save_debug_screenshot("quickview_click_fail")
@@ -269,6 +287,9 @@ def generate_cover_letter_for_current_job(job_snippet: str, raw_quickview_text: 
             result["ok"] = False
             result["error"] = exc
 
+    if not wait_if_paused():
+        raise RuntimeError("stop requested")
+
     log("Starting cover letter generation (may take some time)")
     save_debug_screenshot("before_generate_cover_letter")
     thread = threading.Thread(target=_worker, daemon=True)
@@ -311,9 +332,10 @@ def generate_cover_letter_for_current_job(job_snippet: str, raw_quickview_text: 
 # Step 6
 # -----------------------------
 def go_to_application_options() -> bool:
+    if not wait_if_paused():
+        return False
     package_img = img("create_custome_package.png")
     if not click_image(package_img, timeout=10):
-        log("Could not click create_custome_package.png")
         save_debug_screenshot("package_click_fail")
         return False
     time.sleep(1)
@@ -326,6 +348,8 @@ def scroll_to_bottom_of_page() -> None:
 
 
 def upload_cover_letter(cover_letter_path: Path) -> bool:
+    if not wait_if_paused():
+        return False
     if not cover_letter_path.exists():
         log(f"Cover letter PDF not found: {cover_letter_path}")
         save_debug_screenshot("cover_letter_missing")
@@ -361,20 +385,10 @@ def upload_cover_letter(cover_letter_path: Path) -> bool:
         return False
     time.sleep(0.3)
 
-    if not click_image(img("open.png"), timeout=10):
-        save_debug_screenshot("open_click_fail")
-        return False
-    time.sleep(6.0)
-
-    upload_document_img = img("upload_a_document.png")
-    if not click_image(upload_document_img, timeout=10):
-        save_debug_screenshot("upload_document_fail")
-        return False
-    time.sleep(1.0)
-    return True
-
 
 def select_resume_by_name(resume_version_name: str) -> bool:
+    if not wait_if_paused():
+        return False
     resume_img = img(f"{resume_version_name}.png")
     if not file_exists(resume_img):
         log(f"Resume image not found: {Path(resume_img).name}")
@@ -390,8 +404,9 @@ def select_resume_by_name(resume_version_name: str) -> bool:
 
 
 def submit_application() -> bool:
+    if not wait_if_paused():
+        return False
     if not click_image(img("submit.png"), timeout=10):
-        log("Could not click submit.png")
         save_debug_screenshot("submit_click_fail")
         return False
     time.sleep(1)
@@ -414,6 +429,10 @@ def finish_application() -> None:
 def process_one_job() -> bool:
     if is_stop_requested():
         log("Stop requested before processing job.")
+        return False
+
+    # Respect pause at the start of processing
+    if not wait_if_paused():
         return False
 
     target = find_job_to_apply()

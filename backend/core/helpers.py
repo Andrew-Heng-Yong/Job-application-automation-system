@@ -9,7 +9,7 @@ import pyperclip
 
 from .app_config_loader import load_app_config
 # check stop flag to make helpers responsive
-from .stop_flag import is_stop_requested
+from .state_handler import is_stop_requested, is_pause_requested
 
 # Default image/confidence settings (will be overridden by config if provided)
 _cfg = {}
@@ -96,11 +96,32 @@ def find_center(image_path: str, confidence: float = CONFIDENCE, region=None):
     return _locate_center(image_path, confidence=confidence, region=region)
 
 
+def wait_if_paused() -> bool:
+    """Block while pause is requested but remain responsive to stop.
+
+    Returns False if a stop was requested while paused; True when continuing.
+    """
+    # Only log a single message when we enter paused state
+    already_logged = False
+    while is_pause_requested():
+        if is_stop_requested():
+            return False
+        if not already_logged:
+            log("Automation paused (press Resume to continue).")
+            already_logged = True
+        time.sleep(0.2)
+    return True
+
+
 def wait_for_image(image_path: str, timeout: float = DEFAULT_TIMEOUT, confidence: float = CONFIDENCE, region=None):
     start = time.time()
     while time.time() - start < timeout:
         if is_stop_requested():
             log("Stop requested during wait_for_image; aborting wait")
+            return None
+        # Respect pause while searching
+        if not wait_if_paused():
+            log("Stop requested while paused in wait_for_image; aborting wait")
             return None
         pos = find_center(image_path, confidence=confidence, region=region)
         if pos:
@@ -137,6 +158,10 @@ def wait_for_any_image(image_paths: list[str], timeout: float = DEFAULT_TIMEOUT,
     while time.time() - start < timeout:
         if is_stop_requested():
             log("Stop requested during wait_for_any_image; aborting wait")
+            return None
+        # Respect pause while searching
+        if not wait_if_paused():
+            log("Stop requested while paused in wait_for_any_image; aborting wait")
             return None
         for image_path in image_paths:
             if file_exists(image_path) and image_exists(image_path, confidence=confidence):

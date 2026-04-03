@@ -11,7 +11,15 @@ from ui_main_window import Ui_MainWindow
 from config_manager import load_json, save_json
 import backend.core.automation as automation
 from backend.core.helpers import set_log_sink, log as helpers_log
-from backend.core.stop_flag import request_stop, clear_stop, is_stop_requested
+# include pause APIs from stop_flag
+from backend.core.state_handler import (
+    request_stop,
+    clear_stop,
+    is_stop_requested,
+    request_pause,
+    clear_pause,
+    is_pause_requested,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -65,27 +73,70 @@ class MainWindow(QMainWindow):
         self.ui.button_save_app_config.clicked.connect(self.save_app_config)
         self.ui.button_load_gemini_config.clicked.connect(self.load_gemini_config)
         self.ui.button_save_gemini_config.clicked.connect(self.save_gemini_config)
+        # Prefer generated names if present: self.ui.run, self.ui.pause, self.ui.resume, self.ui.stop
+        # Provide fallbacks to older widget names to remain compatible.
         try:
-            # Prefer new start_automation handler
-            self.ui.button_run.clicked.connect(self.start_automation)
+            self.ui.run.clicked.connect(self.start_automation)
         except Exception:
-            # Fallback to original run_automation name if needed
-            self.ui.button_run.clicked.connect(self.run_automation)
-        self.ui.button_stop.clicked.connect(self.stop_automation)
+            try:
+                self.ui.button_run.clicked.connect(self.start_automation)
+            except Exception:
+                pass
 
-        # Connect new widgets safely (may not exist in older UI)
         try:
-            self.ui.button_add_resume_row.clicked.connect(self.add_resume_row)
+            self.ui.pause.clicked.connect(self.pause_automation)
         except Exception:
-            pass
+            try:
+                # generated UI may use 'Pause' or 'button_pause'
+                self.ui.Pause.clicked.connect(self.pause_automation)
+            except Exception:
+                try:
+                    self.ui.button_pause.clicked.connect(self.pause_automation)
+                except Exception:
+                    pass
+
         try:
-            self.ui.button_remove_resume_row.clicked.connect(self.remove_resume_row)
+            self.ui.resume.clicked.connect(self.resume_automation)
         except Exception:
-            pass
+            try:
+                self.ui.Resume.clicked.connect(self.resume_automation)
+            except Exception:
+                try:
+                    self.ui.button_resume.clicked.connect(self.resume_automation)
+                except Exception:
+                    pass
+
         try:
-            self.ui.button_clear_logs.clicked.connect(self.ui.text_logs.clear)
+            self.ui.stop.clicked.connect(self.stop_automation)
         except Exception:
-            pass
+            try:
+                self.ui.button_stop.clicked.connect(self.stop_automation)
+            except Exception:
+                pass
+
+        # Ensure initial button states: Run enabled, Pause/Resume/Stop disabled until running
+        try:
+            self.ui.run.setEnabled(True)
+        except Exception:
+            try:
+                self.ui.button_run.setEnabled(True)
+            except Exception:
+                pass
+        for w in ("pause", "Pause", "button_pause"):
+            try:
+                getattr(self.ui, w).setEnabled(False)
+            except Exception:
+                pass
+        for w in ("resume", "Resume", "button_resume"):
+            try:
+                getattr(self.ui, w).setEnabled(False)
+            except Exception:
+                pass
+        for w in ("stop", "button_stop"):
+            try:
+                getattr(self.ui, w).setEnabled(False)
+            except Exception:
+                pass
 
         # Initialize UI with current configs if present
         self.load_app_config()
@@ -219,9 +270,32 @@ class MainWindow(QMainWindow):
             clear_stop()
         except Exception:
             pass
+        try:
+            # also ensure we are not paused when starting
+            clear_pause()
+        except Exception:
+            pass
 
-        # Disable Run while running
-        self.ui.button_run.setEnabled(False)
+        # Disable Run while running and enable Pause/Stop
+        try:
+            self.ui.run.setEnabled(False)
+        except Exception:
+            try:
+                self.ui.button_run.setEnabled(False)
+            except Exception:
+                pass
+
+        # enable Pause and Stop, disable Resume
+        for en_name, dis_name in (("pause", False), ("resume", True), ("stop", False)):
+            try:
+                w = getattr(self.ui, en_name)
+                if en_name == "resume":
+                    w.setEnabled(False)
+                else:
+                    w.setEnabled(True)
+            except Exception:
+                pass
+
         self.log_message("Automation started.")
 
         # Create thread and worker
@@ -260,7 +334,37 @@ class MainWindow(QMainWindow):
         # Worker finished; re-enable Run and update state
         try:
             self.automation_running = False
-            self.ui.button_run.setEnabled(True)
+            # Ensure any paused state is cleared
+            try:
+                clear_pause()
+            except Exception:
+                pass
+
+            # Restore button states: Run enabled, Pause/Resume/Stop disabled
+            try:
+                self.ui.run.setEnabled(True)
+            except Exception:
+                try:
+                    self.ui.button_run.setEnabled(True)
+                except Exception:
+                    pass
+
+            for w in ("pause", "Pause", "button_pause"):
+                try:
+                    getattr(self.ui, w).setEnabled(False)
+                except Exception:
+                    pass
+            for w in ("resume", "Resume", "button_resume"):
+                try:
+                    getattr(self.ui, w).setEnabled(False)
+                except Exception:
+                    pass
+            for w in ("stop", "button_stop"):
+                try:
+                    getattr(self.ui, w).setEnabled(False)
+                except Exception:
+                    pass
+
             if is_stop_requested():
                 self.log_message("Automation stopped.")
             else:
@@ -268,14 +372,96 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
+    def pause_automation(self) -> None:
+        # Pause the running automation cooperatively
+        if not self.automation_running:
+            self.log_message("Automation is not running.")
+            return
+        try:
+            if is_pause_requested():
+                self.log_message("Automation is already paused.")
+                return
+        except Exception:
+            pass
+
+        try:
+            request_pause()
+        except Exception:
+            pass
+
+        self.log_message("Automation paused.")
+        # Disable Pause, enable Resume
+        for w in ("pause", "Pause", "button_pause"):
+            try:
+                getattr(self.ui, w).setEnabled(False)
+            except Exception:
+                pass
+        for w in ("resume", "Resume", "button_resume"):
+            try:
+                getattr(self.ui, w).setEnabled(True)
+            except Exception:
+                pass
+
+    def resume_automation(self) -> None:
+        # Resume the paused automation
+        if not self.automation_running:
+            self.log_message("Automation is not running.")
+            return
+        try:
+            if not is_pause_requested():
+                self.log_message("Automation is not paused.")
+                return
+        except Exception:
+            pass
+
+        try:
+            clear_pause()
+        except Exception:
+            pass
+
+        self.log_message("Automation resumed.")
+        # Enable Pause, disable Resume
+        for w in ("pause", "Pause", "button_pause"):
+            try:
+                getattr(self.ui, w).setEnabled(True)
+            except Exception:
+                pass
+        for w in ("resume", "Resume", "button_resume"):
+            try:
+                getattr(self.ui, w).setEnabled(False)
+            except Exception:
+                pass
+
     def stop_automation(self) -> None:
         # Signal the automation to stop cooperatively without closing the UI
         if not self.automation_running:
             self.log_message("Automation is not running.")
             return
 
-        request_stop()
-        self.log_message("Stop requested by user.")
+        try:
+            request_stop()
+            # ensure pause cleared so worker can exit if it was paused
+            try:
+                clear_pause()
+            except Exception:
+                pass
+            self.log_message("Stop requested by user.")
+
+            # Disable Pause and Resume while stopping
+            for w in ("pause", "Pause", "button_pause"):
+                try:
+                    getattr(self.ui, w).setEnabled(False)
+                except Exception:
+                    pass
+            for w in ("resume", "Resume", "button_resume"):
+                try:
+                    getattr(self.ui, w).setEnabled(False)
+                except Exception:
+                    pass
+
+            QMessageBox.information(self, "Stop", "Stop requested — automation will stop shortly.")
+        except Exception as exc:
+            QMessageBox.warning(self, "Stop", f"Failed to request stop: {exc}")
 
     # --------------------------
     # Resume catalog helpers
