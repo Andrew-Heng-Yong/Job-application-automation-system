@@ -5,33 +5,72 @@ from pathlib import Path
 from typing import Any
 
 from PySide6.QtWidgets import QMainWindow, QMessageBox, QTableWidgetItem
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Signal, QThread, QObject
 
 from ui_main_window import Ui_MainWindow
 from config_manager import load_json, save_json
 import backend.core.automation as automation
+from backend.core.helpers import set_log_sink, log as helpers_log
+from backend.core.stop_flag import request_stop, clear_stop, is_stop_requested
 
 BASE_DIR = Path(__file__).resolve().parent
 
 
+# Worker that runs automation.main() inside a QThread and reports finished/errors
+class AutomationWorker(QObject):
+    finished = Signal()
+    error = Signal(str)
+
+    def run(self) -> None:
+        try:
+            automation.main()
+        except Exception as e:
+            try:
+                self.error.emit(str(e))
+            except Exception:
+                pass
+        finally:
+            try:
+                self.finished.emit()
+            except Exception:
+                pass
+
+
 class MainWindow(QMainWindow):
+    # Signal used to safely deliver log messages from other threads
+    log_signal = Signal(str)
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        # Register UI log sink before other initialization so helpers.log() messages
+        # will be delivered to the UI via the signal.
+        self.log_signal.connect(self.log_message)
+        set_log_sink(self.handle_external_log)
+
         # Internal state
         self._app_config_path = BASE_DIR / "app_config.json"
         self._gemini_config_path = BASE_DIR / "gemini_config.json"
         self._original_resume_catalog: list[dict[str, Any]] | None = None
-        self._automation_thread: threading.Thread | None = None
+        # Automation thread/worker state
+        self.automation_thread: QThread | None = None
+        self.automation_worker: AutomationWorker | None = None
+        self.automation_running: bool = False
 
         # Connect buttons (existing)
+        # Wire Run -> start_automation (QThread worker) and Stop -> stop_automation
         self.ui.button_load_app_config.clicked.connect(self.load_app_config)
         self.ui.button_save_app_config.clicked.connect(self.save_app_config)
         self.ui.button_load_gemini_config.clicked.connect(self.load_gemini_config)
         self.ui.button_save_gemini_config.clicked.connect(self.save_gemini_config)
-        self.ui.button_run.clicked.connect(self.run_automation)
+        try:
+            # Prefer new start_automation handler
+            self.ui.button_run.clicked.connect(self.start_automation)
+        except Exception:
+            # Fallback to original run_automation name if needed
+            self.ui.button_run.clicked.connect(self.run_automation)
         self.ui.button_stop.clicked.connect(self.stop_automation)
 
         # Connect new widgets safely (may not exist in older UI)
@@ -52,9 +91,9 @@ class MainWindow(QMainWindow):
         self.load_app_config()
         self.load_gemini_config()
 
-        # Startup log
+        # Startup log (use helpers.log so message is formatted and appears in UI)
         try:
-            self.log_message("UI initialized.")
+            helpers_log("UI initialized.")
         except Exception:
             # If logs widget missing, ignore
             pass
@@ -164,40 +203,79 @@ class MainWindow(QMainWindow):
         save_json(str(self._gemini_config_path), cfg)
 
     # --------------------------
-    # Automation control
+    # Automation control (QThread worker)
     # --------------------------
-    def _automation_target(self) -> None:
-        try:
-            automation.main()
-        except Exception as exc:
-            # show a user-friendly message on failure on the main thread
-            QTimer.singleShot(0, lambda: QMessageBox.critical(self, "Automation Error", f"Automation raised an exception: {exc}"))
-        finally:
-            # Re-enable Run button when finished on the main thread
-            QTimer.singleShot(0, lambda: self.ui.button_run.setEnabled(True))
+    def start_automation(self) -> None:
+        """Start automation in a QThread using AutomationWorker.
 
-    def run_automation(self) -> None:
-        if self._automation_thread and self._automation_thread.is_alive():
+        This keeps the Qt event loop responsive and allows cooperative stopping
+        via the shared stop flag.
+        """
+        if self.automation_running:
+            self.log_message("Automation is already running.")
             return
 
-        # Clear any previous stop requests and start automation
         try:
-            automation.clear_stop()
+            clear_stop()
         except Exception:
             pass
-        self.log_message("Starting automation...")
+
+        # Disable Run while running
         self.ui.button_run.setEnabled(False)
-        self._automation_thread = threading.Thread(target=self._automation_target, daemon=True)
-        self._automation_thread.start()
+        self.log_message("Automation started.")
+
+        # Create thread and worker
+        thread = QThread()
+        worker = AutomationWorker()
+        worker.moveToThread(thread)
+
+        # Wire signals
+        thread.started.connect(worker.run)
+        worker.finished.connect(self.on_worker_finished)
+        worker.finished.connect(thread.quit)
+        worker.error.connect(lambda msg: QTimer.singleShot(0, lambda: self.log_message(f"Automation error: {msg}")))
+
+        # When the thread fully finishes, ensure we clear references
+        def _thread_cleanup() -> None:
+            try:
+                # Clear stored references on the main thread
+                self.automation_thread = None
+                self.automation_worker = None
+            except Exception:
+                pass
+
+        thread.finished.connect(_thread_cleanup)
+
+        # Store refs and start
+        self.automation_thread = thread
+        self.automation_worker = worker
+        self.automation_running = True
+        thread.start()
+
+    # Keep a compatibility wrapper if other code calls run_automation
+    def run_automation(self) -> None:
+        self.start_automation()
+
+    def on_worker_finished(self) -> None:
+        # Worker finished; re-enable Run and update state
+        try:
+            self.automation_running = False
+            self.ui.button_run.setEnabled(True)
+            if is_stop_requested():
+                self.log_message("Automation stopped.")
+            else:
+                self.log_message("Automation finished.")
+        except Exception:
+            pass
 
     def stop_automation(self) -> None:
-        # Signal the automation to stop cooperatively
-        try:
-            automation.request_stop()
-            self.log_message("Stop requested.")
-            QMessageBox.information(self, "Stop", "Stop requested — automation will stop shortly.")
-        except Exception as exc:
-            QMessageBox.warning(self, "Stop", f"Failed to request stop: {exc}")
+        # Signal the automation to stop cooperatively without closing the UI
+        if not self.automation_running:
+            self.log_message("Automation is not running.")
+            return
+
+        request_stop()
+        self.log_message("Stop requested by user.")
 
     # --------------------------
     # Resume catalog helpers
@@ -220,6 +298,13 @@ class MainWindow(QMainWindow):
     # --------------------------
     # Logging helpers
     # --------------------------
+    def handle_external_log(self, message: str) -> None:
+        # Called by helpers.log in background threads — emit signal to append in UI thread
+        try:
+            self.log_signal.emit(message)
+        except Exception:
+            pass
+
     def log_message(self, message: str) -> None:
         try:
             now = message

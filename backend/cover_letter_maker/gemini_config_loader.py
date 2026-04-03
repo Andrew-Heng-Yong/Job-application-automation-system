@@ -23,3 +23,5 @@ RESUME_CATALOG = [
     {"name": item["name"], "summary": item["summary"]}
     for item in _cfg.get("RESUME_CATALOG", [])
 ]
+
+print(f"API key: {API_KEY}")

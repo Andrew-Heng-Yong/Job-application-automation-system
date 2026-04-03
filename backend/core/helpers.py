@@ -36,12 +36,37 @@ def timestamp() -> str:
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
+# Logging sink for UI integration (callable that accepts a single str)
+_LOG_SINK = None
+
+def set_log_sink(callback):
+    """Register a callable to receive formatted log messages.
+
+    The callback will be called with a single string argument. It should be
+    thread-safe — the UI will typically re-emit via a Qt signal.
+    """
+    global _LOG_SINK
+    _LOG_SINK = callback
+
+
 def log(msg: str) -> None:
-    print(f"[{time.strftime('%H:%M:%S')}] {msg}")
+    """Log a message to console and to the registered log sink (if any).
+
+    Messages keep the existing timestamp format so callers in automation do
+    not need to change.
+    """
+    formatted = f"[{time.strftime('%H:%M:%S')}] {msg}"
+
+    if _LOG_SINK is not None:
+        try:
+            _LOG_SINK(formatted)
+        except Exception:
+            # Sink must not be allowed to raise into automation
+            pass
 
 
 def save_debug_screenshot(prefix: str = "debug") -> str:
-    path = BASE_DIR / f"{prefix}_{timestamp()}.png"
+    path = BASE_DIR / f"debug_screenshots/{prefix}_{timestamp()}.png"
     pyautogui.screenshot(str(path))
     log(f"Saved screenshot: {path.name}")
     return str(path)

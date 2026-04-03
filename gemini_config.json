@@ -7,7 +7,7 @@
   "COVER_LETTER_USER_PROMPT_TEMPLATE": "Write a tailored cover letter.\n\nCompany: {company_name}\n\nJob description:\n{job_description}\n\nSelected resume name: {resume_name}\nSelected resume text:\n{resume_text}\n\nEmphasis points:\n{emphasis_points}\n",
   "MINOR_CHANGE_SYSTEM_PROMPT": "You write concise, specific, professional cover letters.\nYou are revising for a new role at the same company.\nKeep continuity with the previous cover letter, but introduce only minor changes to fit the new job.\nAvoid copying long phrases verbatim.\nUse only the provided materials.\nOutput only the final cover letter text.",
   "MINOR_CHANGE_USER_PROMPT_TEMPLATE": "Write a tailored cover letter for a new role at the same company.\n\nCompany: {company_name}\n\nJob description:\n{job_description}\n\nSelected resume name: {resume_name}\nSelected resume text:\n{resume_text}\n\nEmphasis points:\n{emphasis_points}\n\nUse the uploaded previous cover letter PDF as context.\nPreserve general tone and motivation, but make minor changes for the new role.\n",
-  "ADDITIONAL_PERSONAL_INFORMATION": "use them selectively based on the job description: ",
+  "ADDITIONAL_PERSONAL_INFORMATION": "use them selectively based on the job description:",
   "COVER_LETTER_WORD_LIMIT": 150,
   "RESUME_CATALOG": [
     {
