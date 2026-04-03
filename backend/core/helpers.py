@@ -7,16 +7,24 @@ from pathlib import Path
 import pyautogui
 import pyperclip
 
-# Default image/confidence settings (can be overridden in caller if needed)
-CONFIDENCE = 0.85
-CHECK_INTERVAL = 0.35
-DEFAULT_TIMEOUT = 10
-SCROLL_STEP = -700
+from .app_config_loader import load_app_config
+
+# Default image/confidence settings (will be overridden by config if provided)
+_cfg = {}
+try:
+    _cfg = load_app_config()
+except Exception:
+    # fall back to defaults if config not found
+    _cfg = {}
+
+CONFIDENCE = float(_cfg.get("confidence", 0.85))
+CHECK_INTERVAL = float(_cfg.get("check_interval", 0.35))
+DEFAULT_TIMEOUT = float(_cfg.get("default_timeout", 10))
+SCROLL_STEP = int(_cfg.get("scroll_step", -700))
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 IMG_DIR = BASE_DIR / "imgs"
-OUTPUT_DIR = BASE_DIR / "generated_cover_letters"
-DEBUG_DIR = BASE_DIR / "debug_screenshots"
+OUTPUT_DIR = Path(BASE_DIR) / "generated_cover_letters"
 
 def img(name: str) -> str:
     return str(IMG_DIR / name)
@@ -31,8 +39,7 @@ def log(msg: str) -> None:
 
 
 def save_debug_screenshot(prefix: str = "debug") -> str:
-    DEBUG_DIR.mkdir(parents=True, exist_ok=True)
-    path = DEBUG_DIR / f"{prefix}_{timestamp()}.png"
+    path = BASE_DIR / f"{prefix}_{timestamp()}.png"
     pyautogui.screenshot(str(path))
     log(f"Saved screenshot: {path.name}")
     return str(path)

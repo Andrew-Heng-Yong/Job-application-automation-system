@@ -26,16 +26,23 @@ from backend.core.helpers import (
     extract_between_anchors,
     latest_generated_pdf_path,
 )
+from backend.core.app_config_loader import load_app_config
 
-# Automation-specific constants (kept from original main.py)
-PAGE_READY_TIMEOUT = 30
-POST_APPLY_TIMEOUT = 1
-APPLY_RETRY_COUNT = 3
-MAX_SCROLL_PAGES = 20
-ROW_HALF_HEIGHT = 60
-LEFT_SCAN_WIDTH_RATIO = 0.82  # left part of row contains level tags, not the apply button
-START_ANCHOR = "Job - Country:"
-END_ANCHOR = "Targeted Degrees and Disciplines:"
+# Load configuration with safe fallbacks
+_cfg = {}
+try:
+    _cfg = load_app_config()
+except Exception:
+    _cfg = {}
+
+PAGE_READY_TIMEOUT = int(_cfg.get("page_ready_timeout", 30))
+POST_APPLY_TIMEOUT = int(_cfg.get("post_apply_timeout", 1))
+APPLY_RETRY_COUNT = int(_cfg.get("apply_retry_count", 3))
+MAX_SCROLL_PAGES = int(_cfg.get("max_scroll_pages", 20))
+ROW_HALF_HEIGHT = int(_cfg.get("row_half_height", 60))
+LEFT_SCAN_WIDTH_RATIO = float(_cfg.get("left_scan_width_ratio", 0.82))
+START_ANCHOR = _cfg.get("start_anchor", "Job - Country:")
+END_ANCHOR = _cfg.get("end_anchor", "Targeted Degrees and Disciplines:")
 
 PREV_COMPANY_NAME: str | None = None
 LAST_COVER_LETTER_PATH: Path | None = None

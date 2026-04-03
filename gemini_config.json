@@ -1,5 +1,5 @@
 {
-  "API_KEY": "apikeyhere",
+  "API_KEY": "YOUR_API_KEY",
   "MODEL_NAME": "gemini-2.5-flash",
   "OUTPUT_DIR": "generated_cover_letters",
 
@@ -15,7 +15,7 @@
 
   "MINOR_CHANGE_USER_PROMPT_TEMPLATE": "Write a tailored cover letter for a new role at the same company.\n\nCompany: {company_name}\n\nJob description:\n{job_description}\n\nSelected resume name: {resume_name}\nSelected resume text:\n{resume_text}\n\nEmphasis points:\n{emphasis_points}\n\nUse the uploaded previous cover letter PDF as context.\nPreserve general tone and motivation, but make minor changes for the new role.\n",
 
-  "ADDITIONAL_PERSONAL_INFORMATION": "use them selectively based on the job description: add stuff here",
+  "ADDITIONAL_PERSONAL_INFORMATION": "use them selectively based on the job description: ",
 
   "COVER_LETTER_WORD_LIMIT": 150,
 

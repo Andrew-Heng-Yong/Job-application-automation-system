@@ -3,7 +3,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-with open(BASE_DIR / "gconfig.json", "r", encoding="utf-8") as f:
+with open(BASE_DIR / "gemini_config.json", "r", encoding="utf-8") as f:
     _cfg = json.load(f)
 
 API_KEY = _cfg.get("API_KEY")

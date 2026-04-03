@@ -29,7 +29,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
 
-from .gconfig_loader import (
+from .gemini_config_loader import (
     API_KEY,
     MODEL_NAME,
     BASE_DIR,
