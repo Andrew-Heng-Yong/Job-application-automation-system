@@ -362,7 +362,6 @@ def generate_cover_letter_for_current_job(job_snippet: str, raw_quickview_text: 
         raise RuntimeError("stop requested")
 
     log("Starting cover letter generation (may take some time)")
-    save_debug_screenshot("before_generate_cover_letter")
     thread = threading.Thread(target=_worker, daemon=True)
     thread.start()
 
