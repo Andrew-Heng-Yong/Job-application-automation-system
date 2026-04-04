@@ -22,6 +22,7 @@ from backend.core.state_handler import (
 )
 
 from overlay_window import OverlayWindow
+from popup_editor import PopupEditorDialog
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -146,6 +147,17 @@ class MainWindow(QMainWindow):
         self.load_app_config()
         self.load_gemini_config()
 
+        # Start a timer to poll for popup edit requests from worker threads
+        # This uses backend.core.popup_bridge.has_request/take_request/set_response
+        # to coordinate a worker requesting a UI dialog and the main UI providing
+        # the edited text back to the worker.
+        try:
+            self._popup_poll_timer = QTimer(self)
+            self._popup_poll_timer.timeout.connect(self._poll_popup_requests)
+            self._popup_poll_timer.start(200)  # poll every 200ms
+        except Exception:
+            pass
+
         # Startup log (use helpers.log so message is formatted and appears in UI)
         try:
             helpers_log("UI initialized.")
@@ -172,21 +184,69 @@ class MainWindow(QMainWindow):
         self.ui.edit_start_anchor.setText(str(cfg.get("start_anchor", self.ui.edit_start_anchor.text())))
         self.ui.edit_end_anchor.setText(str(cfg.get("end_anchor", self.ui.edit_end_anchor.text())))
 
+        # Map UI checkbox to JSON key: UI checkbox 'use_text_editer' -> JSON 'use_text_editor'
+        # Apply default False when key missing in file
+        try:
+            use_text_editor_value = bool(cfg.get("use_text_editor", False))  # default False if missing
+            if hasattr(self.ui, "use_text_editer"):
+                # Note: UI object name is misspelled 'use_text_editer' but maps to 'use_text_editor' in JSON
+                self.ui.use_text_editer.setChecked(use_text_editor_value)
+        except Exception:
+            pass
+
+        # Map UI checkbox to JSON key: UI checkbox 'generater_deployment_override' -> JSON 'generater_deployment_override'
+        # Apply default False when key missing in file
+        try:
+            gen_deploy_value = bool(cfg.get("generater_deployment_override", False))  # default False if missing
+            if hasattr(self.ui, "generater_deployment_override"):
+                self.ui.generater_deployment_override.setChecked(gen_deploy_value)
+        except Exception:
+            pass
+
     def save_app_config(self) -> None:
-        cfg = {
-            "confidence": float(self.ui.spin_confidence.value()),
-            "check_interval": float(self.ui.spin_check_interval.value()),
-            "default_timeout": int(self.ui.spin_default_timeout.value()),
-            "scroll_step": int(self.ui.spin_scroll_step.value()),
-            "page_ready_timeout": int(self.ui.spin_page_ready_timeout.value()),
-            "post_apply_timeout": int(self.ui.spin_post_apply_timeout.value()),
-            "apply_retry_count": int(self.ui.spin_apply_retry_count.value()),
-            "max_scroll_pages": int(self.ui.spin_max_scroll_pages.value()),
-            "row_half_height": int(self.ui.spin_row_half_height.value()),
-            "left_scan_width_ratio": float(self.ui.spin_left_scan_width_ratio.value()),
-            "start_anchor": str(self.ui.edit_start_anchor.text()),
-            "end_anchor": str(self.ui.edit_end_anchor.text()),
-        }
+        # Load existing file to preserve keys not present in UI and then update with UI values
+        existing = load_json(str(self._app_config_path))
+        cfg: dict[str, Any] = existing.copy()
+
+        # Update numeric/text fields from UI
+        cfg.update(
+            {
+                "confidence": float(self.ui.spin_confidence.value()),
+                "check_interval": float(self.ui.spin_check_interval.value()),
+                "default_timeout": int(self.ui.spin_default_timeout.value()),
+                "scroll_step": int(self.ui.spin_scroll_step.value()),
+                "page_ready_timeout": int(self.ui.spin_page_ready_timeout.value()),
+                "post_apply_timeout": int(self.ui.spin_post_apply_timeout.value()),
+                "apply_retry_count": int(self.ui.spin_apply_retry_count.value()),
+                "max_scroll_pages": int(self.ui.spin_max_scroll_pages.value()),
+                "row_half_height": int(self.ui.spin_row_half_height.value()),
+                "left_scan_width_ratio": float(self.ui.spin_left_scan_width_ratio.value()),
+                "start_anchor": str(self.ui.edit_start_anchor.text()),
+                "end_anchor": str(self.ui.edit_end_anchor.text()),
+            }
+        )
+
+        # Map JSON key 'use_text_editor' from UI checkbox 'use_text_editer'
+        # If the widget is missing, preserve existing value in file or default to False
+        try:
+            if hasattr(self.ui, "use_text_editer"):
+                cfg["use_text_editor"] = bool(self.ui.use_text_editer.isChecked())
+            else:
+                cfg["use_text_editor"] = bool(existing.get("use_text_editor", False))
+        except Exception:
+            cfg["use_text_editor"] = bool(existing.get("use_text_editor", False))
+
+        # Map JSON key 'generater_deployment_override' from UI checkbox 'generater_deployment_override'
+        # If the widget is missing, preserve existing value in file or default to False
+        try:
+            if hasattr(self.ui, "generater_deployment_override"):
+                cfg["generater_deployment_override"] = bool(self.ui.generater_deployment_override.isChecked())
+            else:
+                cfg["generater_deployment_override"] = bool(existing.get("generater_deployment_override", False))
+        except Exception:
+            cfg["generater_deployment_override"] = bool(existing.get("generater_deployment_override", False))
+
+        # Persist updated config back to disk as valid JSON
         save_json(str(self._app_config_path), cfg)
 
     # --------------------------
@@ -633,6 +693,43 @@ class MainWindow(QMainWindow):
             if self.overlay_window is not None and hasattr(self.overlay_window, "set_running_state"):
                 self.overlay_window.set_running_state(running, paused)
         except Exception:
+            pass
+
+    def _poll_popup_requests(self) -> None:
+        """Check for pending popup edit requests and show the modal editor.
+
+        This runs on the UI thread. When a worker calls request_edit(text),
+        the popup_bridge sets a flag. This method takes the request, shows the
+        modal PopupEditorDialog, and calls set_response(edited_text) to wake the
+        waiting worker thread.
+        """
+        try:
+            from backend.core.popup_bridge import has_request, take_request, set_response
+            if not has_request():
+                return
+            original = take_request()
+            if original is None:
+                # nothing to do
+                set_response(None)
+                return
+
+            # Create the popup editor without a parent so the main window is not
+            # brought to the front when the editor appears. The dialog itself is
+            # set to ApplicationModal and WindowStaysOnTop in its implementation.
+            dlg = PopupEditorDialog(None)
+            edited = dlg.edit_text(original)
+            # If edited is None, user cancelled - use None to indicate no change
+            set_response(edited)
+            # Log the event
+            try:
+                if edited is None:
+                    self.log_message("Popup editor closed without Save; continuing with generated text.")
+                else:
+                    self.log_message("Popup editor saved; resuming automation with edited text.")
+            except Exception:
+                pass
+        except Exception:
+            # Swallow polling errors to avoid spamming logs
             pass
 
 

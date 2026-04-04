@@ -309,3 +309,62 @@ def generate_cover_letter_minor_change(
         suffix="cover_letter_minor_change",
     )
     return resume_name, output_path.name
+
+
+def generate_cover_letter_text(job_description: str, company_name: str | None = None) -> tuple[str, str, str]:
+    """Generate cover letter text (without saving PDF).
+
+    Returns a tuple: (resume_name, cover_letter_text, company)
+    """
+    client = _get_client()
+    selection = _select_resume_and_company(client, job_description)
+
+    resume_name = selection["selected_resume_name"]
+    company = (company_name or selection.get("company_name") or "Unknown company").strip()
+    emphasis_points = selection["emphasis_points"]
+
+    resume_info = _find_resume(resume_name)
+    resume_text = _upload_file_and_extract_text(client, resume_info["path"])
+
+    cover_letter_text = _generate_letter_text(
+        client,
+        job_description=job_description,
+        company_name=company,
+        resume_name=resume_name,
+        resume_text=resume_text,
+        emphasis_points=emphasis_points,
+    )
+
+    return resume_name, cover_letter_text, company
+
+
+def generate_cover_letter_minor_change_text(
+    job_description: str,
+    prev_cover_letter_pdf: str | Path,
+    company_name: str | None = None,
+) -> tuple[str, str, str]:
+    """Generate revised cover letter text (without saving PDF).
+
+    Returns a tuple: (resume_name, cover_letter_text, company)
+    """
+    client = _get_client()
+    selection = _select_resume_and_company(client, job_description)
+
+    resume_name = selection["selected_resume_name"]
+    company = (company_name or selection.get("company_name") or "Unknown company").strip()
+    emphasis_points = selection["emphasis_points"]
+
+    resume_info = _find_resume(resume_name)
+    resume_text = _upload_file_and_extract_text(client, resume_info["path"])
+
+    cover_letter_text = _generate_minor_change_letter_text(
+        client,
+        job_description=job_description,
+        company_name=company,
+        resume_name=resume_name,
+        resume_text=resume_text,
+        emphasis_points=emphasis_points,
+        prev_cover_letter_pdf=prev_cover_letter_pdf,
+    )
+
+    return resume_name, cover_letter_text, company

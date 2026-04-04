@@ -10,5 +10,7 @@
   "row_half_height": 60,
   "left_scan_width_ratio": 0.82,
   "start_anchor": "Job - Country:",
-  "end_anchor": "Targeted Degrees and Disciplines:"
+  "end_anchor": "Targeted Degrees and Disciplines:",
+  "use_text_editor": true,
+  "generater_deployment_override": true
 }

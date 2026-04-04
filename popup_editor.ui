@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>800</width>
+    <height>500</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <widget class="QLabel" name="titleLabel">
      <property name="text">
-      <string>Popup Editor</string>
+      <string>Cover Letter Editer</string>
      </property>
     </widget>
    </item>
@@ -27,16 +27,9 @@
    <item>
     <layout class="QHBoxLayout" name="buttonLayout">
      <item>
-      <widget class="QPushButton" name="saveButton">
+      <widget class="QPushButton" name="ContinueButton">
        <property name="text">
         <string>Save</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="cancelButton">
-       <property name="text">
-        <string>Cancel</string>
        </property>
       </widget>
      </item>

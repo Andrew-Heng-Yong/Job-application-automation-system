@@ -55,10 +55,78 @@
            <property name="verticalSpacing">
             <number>10</number>
            </property>
+           <item row="6" column="0">
+            <widget class="QLabel" name="label_end_anchor">
+             <property name="text">
+              <string>end_anchor</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="3">
+            <widget class="QSpinBox" name="spin_max_scroll_pages">
+             <property name="maximum">
+              <number>99999</number>
+             </property>
+             <property name="value">
+              <number>20</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QLabel" name="label_post_apply_timeout">
+             <property name="text">
+              <string>post_apply_timeout</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_row_half_height">
+             <property name="text">
+              <string>row_half_height</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QLabel" name="label_check_interval">
+             <property name="text">
+              <string>check_interval</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QSpinBox" name="spin_scroll_step">
+             <property name="minimum">
+              <number>-999999</number>
+             </property>
+             <property name="maximum">
+              <number>999999</number>
+             </property>
+             <property name="value">
+              <number>-700</number>
+             </property>
+            </widget>
+           </item>
            <item row="0" column="0">
             <widget class="QLabel" name="label_confidence">
              <property name="text">
               <string>confidence</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1" colspan="3">
+            <widget class="QLineEdit" name="edit_end_anchor">
+             <property name="text">
+              <string>Targeted Degrees and Disciplines:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="spin_page_ready_timeout">
+             <property name="maximum">
+              <number>99999</number>
+             </property>
+             <property name="value">
+              <number>30</number>
              </property>
             </widget>
            </item>
@@ -81,13 +149,6 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="2">
-            <widget class="QLabel" name="label_check_interval">
-             <property name="text">
-              <string>check_interval</string>
-             </property>
-            </widget>
-           </item>
            <item row="0" column="3">
             <widget class="QDoubleSpinBox" name="spin_check_interval">
              <property name="decimals">
@@ -107,84 +168,10 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_default_timeout">
+           <item row="5" column="1" colspan="3">
+            <widget class="QLineEdit" name="edit_start_anchor">
              <property name="text">
-              <string>default_timeout</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QSpinBox" name="spin_default_timeout">
-             <property name="maximum">
-              <number>99999</number>
-             </property>
-             <property name="value">
-              <number>10</number>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="2">
-            <widget class="QLabel" name="label_scroll_step">
-             <property name="text">
-              <string>scroll_step</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="3">
-            <widget class="QSpinBox" name="spin_scroll_step">
-             <property name="minimum">
-              <number>-999999</number>
-             </property>
-             <property name="maximum">
-              <number>999999</number>
-             </property>
-             <property name="value">
-              <number>-700</number>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_page_ready_timeout">
-             <property name="text">
-              <string>page_ready_timeout</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QSpinBox" name="spin_page_ready_timeout">
-             <property name="maximum">
-              <number>99999</number>
-             </property>
-             <property name="value">
-              <number>30</number>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="2">
-            <widget class="QLabel" name="label_post_apply_timeout">
-             <property name="text">
-              <string>post_apply_timeout</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="3">
-            <widget class="QSpinBox" name="spin_post_apply_timeout">
-             <property name="maximum">
-              <number>100</number>
-             </property>
-             <property name="stepType">
-              <enum>QAbstractSpinBox::StepType::DefaultStepType</enum>
-             </property>
-             <property name="value">
-              <number>1</number>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_apply_retry_count">
-             <property name="text">
-              <string>apply_retry_count</string>
+              <string>Job - Country:</string>
              </property>
             </widget>
            </item>
@@ -198,30 +185,6 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="2">
-            <widget class="QLabel" name="label_max_scroll_pages">
-             <property name="text">
-              <string>max_scroll_pages</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="3">
-            <widget class="QSpinBox" name="spin_max_scroll_pages">
-             <property name="maximum">
-              <number>99999</number>
-             </property>
-             <property name="value">
-              <number>20</number>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_row_half_height">
-             <property name="text">
-              <string>row_half_height</string>
-             </property>
-            </widget>
-           </item>
            <item row="4" column="1">
             <widget class="QSpinBox" name="spin_row_half_height">
              <property name="maximum">
@@ -232,10 +195,34 @@
              </property>
             </widget>
            </item>
-           <item row="4" column="2">
-            <widget class="QLabel" name="label_left_scan_width_ratio">
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_page_ready_timeout">
              <property name="text">
-              <string>left_scan_width_ratio</string>
+              <string>page_ready_timeout</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="2">
+            <widget class="QLabel" name="label_max_scroll_pages">
+             <property name="text">
+              <string>max_scroll_pages</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="spin_default_timeout">
+             <property name="maximum">
+              <number>99999</number>
+             </property>
+             <property name="value">
+              <number>10</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_default_timeout">
+             <property name="text">
+              <string>default_timeout</string>
              </property>
             </widget>
            </item>
@@ -258,6 +245,19 @@
              </property>
             </widget>
            </item>
+           <item row="2" column="3">
+            <widget class="QSpinBox" name="spin_post_apply_timeout">
+             <property name="maximum">
+              <number>100</number>
+             </property>
+             <property name="stepType">
+              <enum>QAbstractSpinBox::StepType::DefaultStepType</enum>
+             </property>
+             <property name="value">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
            <item row="5" column="0">
             <widget class="QLabel" name="label_start_anchor">
              <property name="text">
@@ -265,24 +265,38 @@
              </property>
             </widget>
            </item>
-           <item row="5" column="1" colspan="3">
-            <widget class="QLineEdit" name="edit_start_anchor">
+           <item row="1" column="2">
+            <widget class="QLabel" name="label_scroll_step">
              <property name="text">
-              <string>Job - Country:</string>
+              <string>scroll_step</string>
              </property>
             </widget>
            </item>
-           <item row="6" column="0">
-            <widget class="QLabel" name="label_end_anchor">
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_apply_retry_count">
              <property name="text">
-              <string>end_anchor</string>
+              <string>apply_retry_count</string>
              </property>
             </widget>
            </item>
-           <item row="6" column="1" colspan="3">
-            <widget class="QLineEdit" name="edit_end_anchor">
+           <item row="4" column="2">
+            <widget class="QLabel" name="label_left_scan_width_ratio">
              <property name="text">
-              <string>Targeted Degrees and Disciplines:</string>
+              <string>left_scan_width_ratio</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QCheckBox" name="use_text_editer">
+             <property name="text">
+              <string>use text editor</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <widget class="QCheckBox" name="generater_deployment_override">
+             <property name="text">
+              <string>generater deployment override</string>
              </property>
             </widget>
            </item>

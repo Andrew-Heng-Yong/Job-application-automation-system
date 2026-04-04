@@ -13,6 +13,9 @@ from backend.core.state_handler import request_stop, clear_stop, is_stop_request
 from backend.cover_letter_maker.cover_letter_maker import (
     generate_cover_letter,
     generate_cover_letter_minor_change,
+    generate_cover_letter_text,
+    generate_cover_letter_minor_change_text,
+    _save_pdf,
 )
 from backend.core.helpers import (
     img,
@@ -31,6 +34,7 @@ from backend.core.helpers import (
     latest_generated_pdf_path,
     wait_if_paused,
 )
+from backend.core.popup_bridge import request_edit, has_request, take_request, set_response
 from backend.core.app_config_loader import load_app_config
 
 # Load configuration with safe fallbacks
@@ -52,6 +56,66 @@ END_ANCHOR = _cfg.get("end_anchor", "Targeted Degrees and Disciplines:")
 PREV_COMPANY_NAME: str | None = None
 LAST_COVER_LETTER_PATH: Path | None = None
 LAST_RESUME_VERSION_NAME: str | None = None
+
+
+# New helpers for manual override mode
+def is_manual_override_mode() -> bool:
+    """Return True when both use_text_editor and generater_deployment_override are enabled in app_config.json.
+
+    This keeps exact JSON key name 'generater_deployment_override' for compatibility.
+    """
+    try:
+        cfg = load_app_config()
+    except Exception:
+        cfg = {}
+    return bool(cfg.get("use_text_editor", False)) and bool(cfg.get("generater_deployment_override", False))
+
+
+def get_manual_cover_letter_after_package_click(company_name: str) -> tuple[Path, str]:
+    """Show popup editor for manual cover letter entry and save the result to a PDF.
+
+    Returns: (cover_letter_path, resume_name_placeholder)
+    - resume_name_placeholder is 'manual' so calling code knows resume was user-selected.
+    """
+    # Prepare guidance text shown in the popup
+    guidance = (
+        "Write or paste the cover letter here.\n"
+        "Select the resume on the webpage manually before pressing Continue.\n\n"
+    )
+
+    log("Deployment override mode active: skipping Gemini. Opening manual editor popup.")
+
+    # Request the main UI to show the popup and return edited text (blocks worker)
+    try:
+        edited = request_edit(guidance)
+    except Exception as exc:
+        log(f"Failed to request manual edit popup: {exc}")
+        raise
+
+    if edited is None:
+        log("Popup closed without Save; treating as empty manual cover letter.")
+        final_text = ""
+    else:
+        final_text = edited
+
+    # Use placeholder resume name 'manual' because user selects resume manually on site
+    resume_name = "manual"
+
+    # Save manual text to PDF using existing saving pipeline
+    try:
+        output_path = _save_pdf(
+            text=final_text,
+            company_name=company_name or "Unknown company",
+            resume_name=resume_name,
+            suffix="cover_letter_manual",
+        )
+        log(f"Manual cover letter saved: {output_path}")
+    except Exception as exc:
+        log(f"Failed to save manual cover letter PDF: {exc}")
+        save_debug_screenshot("manual_cover_letter_save_fail")
+        raise
+
+    return output_path, resume_name
 
 
 # -----------------------------
@@ -169,7 +233,8 @@ def click_apply_and_wait_for_next_page(apply_pos) -> str | None:
     optional_marker = img("app_option.png")
     if file_exists(optional_marker):
         next_markers.append(optional_marker)
-    next_markers.append(img("create_custome_package.png"))
+    # Use the correct asset name present in the project
+    next_markers.append(img("create_custom_package.png"))
 
     pyautogui.click(apply_pos[0], apply_pos[1])
     log("Clicked apply (attempt 1)")
@@ -193,17 +258,18 @@ def handle_prescreen_if_needed(page_type: str) -> None:
     if page_type != "psq":
         return
 
+    # Respect pause while waiting for prescreen to clear
     if not wait_if_paused():
         raise RuntimeError("stop requested during prescreen wait")
 
     log("Prescreening detected. Waiting for application options page...")
-    markers = [img("create_custome_package.png")]
+    markers = [img("create_custom_package.png")]
     optional_marker = img("app_option.png")
     if file_exists(optional_marker):
         markers.insert(0, optional_marker)
 
-    # Reduced timeout from 3600s to 10s for debugging / faster failure handling
-    found = wait_for_any_image(markers, timeout=10)
+    # Restore long timeout (3600s) for prescreen waits to avoid false timeouts
+    found = wait_for_any_image(markers, timeout=3600)
     if not found:
         save_debug_screenshot("prescreen_timeout")
         raise RuntimeError("prescreen timeout")
@@ -264,15 +330,20 @@ def generate_cover_letter_for_current_job(job_snippet: str, raw_quickview_text: 
     # Extract company name between Organization: and Division: from the raw quickview
     company_name = raw_quickview_text or "Unknown company"
 
+    # Capture previous values BEFORE we update globals so decision for minor-change
+    # vs full generation is based on prior run state.
+    prev_prev_company = PREV_COMPANY_NAME
+    prev_last_cover_path = LAST_COVER_LETTER_PATH
+
     # Run potentially long-running cover-letter generation in a thread with timeout
     result: dict = {}
 
     def _worker():
         try:
-            if PREV_COMPANY_NAME == company_name and LAST_COVER_LETTER_PATH is not None:
+            if prev_prev_company == company_name and prev_last_cover_path is not None:
                 resume_name, cover_letter_file_name = generate_cover_letter_minor_change(
                     job_snippet,
-                    LAST_COVER_LETTER_PATH,
+                    prev_last_cover_path,
                     company_name=company_name,
                 )
             else:
@@ -321,10 +392,64 @@ def generate_cover_letter_for_current_job(job_snippet: str, raw_quickview_text: 
     resume_name = result["resume_name"]
     cover_letter_file_name = result["cover_letter_file_name"]
 
+    # Derive the generated PDF path from the file name returned by the generator
     cover_letter_path = latest_generated_pdf_path(cover_letter_file_name)
+
+    # NEW: optional manual edit step controlled by app_config 'use_text_editor'
+    try:
+        cfg = load_app_config()
+    except Exception:
+        cfg = {}
+    use_text_editor = bool(cfg.get("use_text_editor", False))
+
+    if use_text_editor:
+        # Generate letter text (without saving) so user can edit raw text
+        try:
+            if prev_prev_company == company_name and prev_last_cover_path is not None:
+                # minor-change text generator using prior state
+                resume_name, cover_letter_text, company = generate_cover_letter_minor_change_text(
+                    job_snippet,
+                    prev_last_cover_path,
+                    company_name=company_name,
+                )
+            else:
+                resume_name, cover_letter_text, company = generate_cover_letter_text(
+                    job_snippet,
+                    company_name=company_name,
+                )
+        except Exception as exc:
+            log(f"Cover letter text generation failed for manual edit: {exc}")
+            raise
+
+        # Request main UI to open popup editor and return edited text. This blocks the worker
+        # thread but uses a synchronized bridge so the UI can run normally.
+        try:
+            log("Requesting manual edit of generated cover letter (popup)")
+            edited = request_edit(cover_letter_text)
+            if edited is None:
+                log("Popup closed without Save; using original generated text")
+                final_text = cover_letter_text
+            else:
+                final_text = edited
+            # Save the final_text to PDF and continue the pipeline
+            output_path = _save_pdf(
+                text=final_text,
+                company_name=company,
+                resume_name=resume_name,
+                suffix="cover_letter",
+            )
+            cover_letter_path = output_path
+        except Exception as exc:
+            log(f"Manual edit flow failed: {exc}")
+            save_debug_screenshot("manual_edit_fail")
+            raise
+
+    # Update global state AFTER we've finalized the cover_letter_path to avoid
+    # influencing text-generation decision above
     PREV_COMPANY_NAME = company_name
     LAST_COVER_LETTER_PATH = cover_letter_path
     LAST_RESUME_VERSION_NAME = resume_name
+
     return resume_name, cover_letter_path
 
 
@@ -334,7 +459,8 @@ def generate_cover_letter_for_current_job(job_snippet: str, raw_quickview_text: 
 def go_to_application_options() -> bool:
     if not wait_if_paused():
         return False
-    package_img = img("create_custome_package.png")
+    # Use the correct asset name present in the project
+    package_img = img("create_custom_package.png")
     if not click_image(package_img, timeout=10):
         save_debug_screenshot("package_click_fail")
         return False
@@ -379,11 +505,22 @@ def upload_cover_letter(cover_letter_path: Path) -> bool:
         return False
     time.sleep(1.0)
 
-    # Select the top PDF in the file dialog and click Open (revert to clicking UI)
     if not click_image(img("pdf.png"), timeout=10):
         save_debug_screenshot("choose_pdf_fail")
         return False
     time.sleep(0.3)
+
+    if not click_image(img("open.png"), timeout=10):
+        save_debug_screenshot("open_click_fail")
+        return False
+    time.sleep(6.0)
+
+    if not click_image(img("upload_a_document.png"), timeout=10):
+        save_debug_screenshot("upload_document_fail")
+        return False
+    time.sleep(1.0)
+
+    return True
 
 
 def select_resume_by_name(resume_version_name: str) -> bool:
@@ -455,19 +592,46 @@ def process_one_job() -> bool:
     if not close_quickview():
         raise RuntimeError("quickview close error")
 
-    resume_version_name, cover_letter_path = generate_cover_letter_for_current_job(job_description, company_name)
+    # Determine manual override mode (both flags must be true)
+    override_mode = is_manual_override_mode()
+
+    resume_version_name: str | None = None
+    cover_letter_path: Path | None = None
+
+    # In non-override mode, generate cover letter as before
+    if not override_mode:
+        resume_version_name, cover_letter_path = generate_cover_letter_for_current_job(job_description, company_name)
 
     if is_stop_requested():
         log("Stop requested before uploading, aborting job.")
         return False
 
+    # Click into application options (create_custom_package)
     if not go_to_application_options():
         raise RuntimeError("application options error")
+
+    # If override_mode is active, open popup editor for manual entry AFTER clicking package
+    if override_mode:
+        log("Manual deployment override enabled: skipping Gemini and automated resume selection.")
+        # This will open the popup editor for the user to write/paste the cover letter,
+        # and the user is expected to manually select the resume on the webpage before Continue.
+        cover_letter_path, resume_version_name = get_manual_cover_letter_after_package_click(company_name)
+
+        log("Manual cover letter entry complete. Resuming automation. Resume selection is expected to be manual on the page.")
+
+    # Continue the remaining flow
     scroll_to_bottom_of_page()
     if not upload_cover_letter(cover_letter_path):
         raise RuntimeError("cover letter upload error")
-    if not select_resume_by_name(resume_version_name):
-        raise RuntimeError("resume select error")
+
+    # If not override mode, auto-select resume selected by Gemini
+    if not override_mode:
+        if not select_resume_by_name(resume_version_name):
+            raise RuntimeError("resume select error")
+    else:
+        # In manual override mode we explicitly skip automated resume selection
+        log("Skipping automated resume selection due to manual deployment override; user should have selected resume on page.")
+
     if not submit_application():
         raise RuntimeError("submit error")
 

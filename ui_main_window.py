@@ -15,12 +15,13 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QAbstractSpinBox, QApplication, QDoubleSpinBox,
-    QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
-    QLabel, QLineEdit, QMainWindow, QMenuBar,
-    QPlainTextEdit, QPushButton, QScrollArea, QSizePolicy,
-    QSpacerItem, QSpinBox, QStatusBar, QTabWidget,
-    QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QAbstractSpinBox, QApplication, QCheckBox,
+    QDoubleSpinBox, QGridLayout, QGroupBox, QHBoxLayout,
+    QHeaderView, QLabel, QLineEdit, QMainWindow,
+    QMenuBar, QPlainTextEdit, QPushButton, QScrollArea,
+    QSizePolicy, QSpacerItem, QSpinBox, QStatusBar,
+    QTabWidget, QTableWidget, QTableWidgetItem, QVBoxLayout,
+    QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -46,10 +47,57 @@ class Ui_MainWindow(object):
         self.gridLayout_app_config.setObjectName(u"gridLayout_app_config")
         self.gridLayout_app_config.setHorizontalSpacing(16)
         self.gridLayout_app_config.setVerticalSpacing(10)
+        self.label_end_anchor = QLabel(self.groupBox_app_config)
+        self.label_end_anchor.setObjectName(u"label_end_anchor")
+
+        self.gridLayout_app_config.addWidget(self.label_end_anchor, 6, 0, 1, 1)
+
+        self.spin_max_scroll_pages = QSpinBox(self.groupBox_app_config)
+        self.spin_max_scroll_pages.setObjectName(u"spin_max_scroll_pages")
+        self.spin_max_scroll_pages.setMaximum(99999)
+        self.spin_max_scroll_pages.setValue(20)
+
+        self.gridLayout_app_config.addWidget(self.spin_max_scroll_pages, 3, 3, 1, 1)
+
+        self.label_post_apply_timeout = QLabel(self.groupBox_app_config)
+        self.label_post_apply_timeout.setObjectName(u"label_post_apply_timeout")
+
+        self.gridLayout_app_config.addWidget(self.label_post_apply_timeout, 2, 2, 1, 1)
+
+        self.label_row_half_height = QLabel(self.groupBox_app_config)
+        self.label_row_half_height.setObjectName(u"label_row_half_height")
+
+        self.gridLayout_app_config.addWidget(self.label_row_half_height, 4, 0, 1, 1)
+
+        self.label_check_interval = QLabel(self.groupBox_app_config)
+        self.label_check_interval.setObjectName(u"label_check_interval")
+
+        self.gridLayout_app_config.addWidget(self.label_check_interval, 0, 2, 1, 1)
+
+        self.spin_scroll_step = QSpinBox(self.groupBox_app_config)
+        self.spin_scroll_step.setObjectName(u"spin_scroll_step")
+        self.spin_scroll_step.setMinimum(-999999)
+        self.spin_scroll_step.setMaximum(999999)
+        self.spin_scroll_step.setValue(-700)
+
+        self.gridLayout_app_config.addWidget(self.spin_scroll_step, 1, 3, 1, 1)
+
         self.label_confidence = QLabel(self.groupBox_app_config)
         self.label_confidence.setObjectName(u"label_confidence")
 
         self.gridLayout_app_config.addWidget(self.label_confidence, 0, 0, 1, 1)
+
+        self.edit_end_anchor = QLineEdit(self.groupBox_app_config)
+        self.edit_end_anchor.setObjectName(u"edit_end_anchor")
+
+        self.gridLayout_app_config.addWidget(self.edit_end_anchor, 6, 1, 1, 3)
+
+        self.spin_page_ready_timeout = QSpinBox(self.groupBox_app_config)
+        self.spin_page_ready_timeout.setObjectName(u"spin_page_ready_timeout")
+        self.spin_page_ready_timeout.setMaximum(99999)
+        self.spin_page_ready_timeout.setValue(30)
+
+        self.gridLayout_app_config.addWidget(self.spin_page_ready_timeout, 2, 1, 1, 1)
 
         self.spin_confidence = QDoubleSpinBox(self.groupBox_app_config)
         self.spin_confidence.setObjectName(u"spin_confidence")
@@ -61,11 +109,6 @@ class Ui_MainWindow(object):
 
         self.gridLayout_app_config.addWidget(self.spin_confidence, 0, 1, 1, 1)
 
-        self.label_check_interval = QLabel(self.groupBox_app_config)
-        self.label_check_interval.setObjectName(u"label_check_interval")
-
-        self.gridLayout_app_config.addWidget(self.label_check_interval, 0, 2, 1, 1)
-
         self.spin_check_interval = QDoubleSpinBox(self.groupBox_app_config)
         self.spin_check_interval.setObjectName(u"spin_check_interval")
         self.spin_check_interval.setDecimals(2)
@@ -76,60 +119,10 @@ class Ui_MainWindow(object):
 
         self.gridLayout_app_config.addWidget(self.spin_check_interval, 0, 3, 1, 1)
 
-        self.label_default_timeout = QLabel(self.groupBox_app_config)
-        self.label_default_timeout.setObjectName(u"label_default_timeout")
+        self.edit_start_anchor = QLineEdit(self.groupBox_app_config)
+        self.edit_start_anchor.setObjectName(u"edit_start_anchor")
 
-        self.gridLayout_app_config.addWidget(self.label_default_timeout, 1, 0, 1, 1)
-
-        self.spin_default_timeout = QSpinBox(self.groupBox_app_config)
-        self.spin_default_timeout.setObjectName(u"spin_default_timeout")
-        self.spin_default_timeout.setMaximum(99999)
-        self.spin_default_timeout.setValue(10)
-
-        self.gridLayout_app_config.addWidget(self.spin_default_timeout, 1, 1, 1, 1)
-
-        self.label_scroll_step = QLabel(self.groupBox_app_config)
-        self.label_scroll_step.setObjectName(u"label_scroll_step")
-
-        self.gridLayout_app_config.addWidget(self.label_scroll_step, 1, 2, 1, 1)
-
-        self.spin_scroll_step = QSpinBox(self.groupBox_app_config)
-        self.spin_scroll_step.setObjectName(u"spin_scroll_step")
-        self.spin_scroll_step.setMinimum(-999999)
-        self.spin_scroll_step.setMaximum(999999)
-        self.spin_scroll_step.setValue(-700)
-
-        self.gridLayout_app_config.addWidget(self.spin_scroll_step, 1, 3, 1, 1)
-
-        self.label_page_ready_timeout = QLabel(self.groupBox_app_config)
-        self.label_page_ready_timeout.setObjectName(u"label_page_ready_timeout")
-
-        self.gridLayout_app_config.addWidget(self.label_page_ready_timeout, 2, 0, 1, 1)
-
-        self.spin_page_ready_timeout = QSpinBox(self.groupBox_app_config)
-        self.spin_page_ready_timeout.setObjectName(u"spin_page_ready_timeout")
-        self.spin_page_ready_timeout.setMaximum(99999)
-        self.spin_page_ready_timeout.setValue(30)
-
-        self.gridLayout_app_config.addWidget(self.spin_page_ready_timeout, 2, 1, 1, 1)
-
-        self.label_post_apply_timeout = QLabel(self.groupBox_app_config)
-        self.label_post_apply_timeout.setObjectName(u"label_post_apply_timeout")
-
-        self.gridLayout_app_config.addWidget(self.label_post_apply_timeout, 2, 2, 1, 1)
-
-        self.spin_post_apply_timeout = QSpinBox(self.groupBox_app_config)
-        self.spin_post_apply_timeout.setObjectName(u"spin_post_apply_timeout")
-        self.spin_post_apply_timeout.setMaximum(100)
-        self.spin_post_apply_timeout.setStepType(QAbstractSpinBox.StepType.DefaultStepType)
-        self.spin_post_apply_timeout.setValue(1)
-
-        self.gridLayout_app_config.addWidget(self.spin_post_apply_timeout, 2, 3, 1, 1)
-
-        self.label_apply_retry_count = QLabel(self.groupBox_app_config)
-        self.label_apply_retry_count.setObjectName(u"label_apply_retry_count")
-
-        self.gridLayout_app_config.addWidget(self.label_apply_retry_count, 3, 0, 1, 1)
+        self.gridLayout_app_config.addWidget(self.edit_start_anchor, 5, 1, 1, 3)
 
         self.spin_apply_retry_count = QSpinBox(self.groupBox_app_config)
         self.spin_apply_retry_count.setObjectName(u"spin_apply_retry_count")
@@ -138,23 +131,6 @@ class Ui_MainWindow(object):
 
         self.gridLayout_app_config.addWidget(self.spin_apply_retry_count, 3, 1, 1, 1)
 
-        self.label_max_scroll_pages = QLabel(self.groupBox_app_config)
-        self.label_max_scroll_pages.setObjectName(u"label_max_scroll_pages")
-
-        self.gridLayout_app_config.addWidget(self.label_max_scroll_pages, 3, 2, 1, 1)
-
-        self.spin_max_scroll_pages = QSpinBox(self.groupBox_app_config)
-        self.spin_max_scroll_pages.setObjectName(u"spin_max_scroll_pages")
-        self.spin_max_scroll_pages.setMaximum(99999)
-        self.spin_max_scroll_pages.setValue(20)
-
-        self.gridLayout_app_config.addWidget(self.spin_max_scroll_pages, 3, 3, 1, 1)
-
-        self.label_row_half_height = QLabel(self.groupBox_app_config)
-        self.label_row_half_height.setObjectName(u"label_row_half_height")
-
-        self.gridLayout_app_config.addWidget(self.label_row_half_height, 4, 0, 1, 1)
-
         self.spin_row_half_height = QSpinBox(self.groupBox_app_config)
         self.spin_row_half_height.setObjectName(u"spin_row_half_height")
         self.spin_row_half_height.setMaximum(99999)
@@ -162,10 +138,27 @@ class Ui_MainWindow(object):
 
         self.gridLayout_app_config.addWidget(self.spin_row_half_height, 4, 1, 1, 1)
 
-        self.label_left_scan_width_ratio = QLabel(self.groupBox_app_config)
-        self.label_left_scan_width_ratio.setObjectName(u"label_left_scan_width_ratio")
+        self.label_page_ready_timeout = QLabel(self.groupBox_app_config)
+        self.label_page_ready_timeout.setObjectName(u"label_page_ready_timeout")
 
-        self.gridLayout_app_config.addWidget(self.label_left_scan_width_ratio, 4, 2, 1, 1)
+        self.gridLayout_app_config.addWidget(self.label_page_ready_timeout, 2, 0, 1, 1)
+
+        self.label_max_scroll_pages = QLabel(self.groupBox_app_config)
+        self.label_max_scroll_pages.setObjectName(u"label_max_scroll_pages")
+
+        self.gridLayout_app_config.addWidget(self.label_max_scroll_pages, 3, 2, 1, 1)
+
+        self.spin_default_timeout = QSpinBox(self.groupBox_app_config)
+        self.spin_default_timeout.setObjectName(u"spin_default_timeout")
+        self.spin_default_timeout.setMaximum(99999)
+        self.spin_default_timeout.setValue(10)
+
+        self.gridLayout_app_config.addWidget(self.spin_default_timeout, 1, 1, 1, 1)
+
+        self.label_default_timeout = QLabel(self.groupBox_app_config)
+        self.label_default_timeout.setObjectName(u"label_default_timeout")
+
+        self.gridLayout_app_config.addWidget(self.label_default_timeout, 1, 0, 1, 1)
 
         self.spin_left_scan_width_ratio = QDoubleSpinBox(self.groupBox_app_config)
         self.spin_left_scan_width_ratio.setObjectName(u"spin_left_scan_width_ratio")
@@ -177,25 +170,43 @@ class Ui_MainWindow(object):
 
         self.gridLayout_app_config.addWidget(self.spin_left_scan_width_ratio, 4, 3, 1, 1)
 
+        self.spin_post_apply_timeout = QSpinBox(self.groupBox_app_config)
+        self.spin_post_apply_timeout.setObjectName(u"spin_post_apply_timeout")
+        self.spin_post_apply_timeout.setMaximum(100)
+        self.spin_post_apply_timeout.setStepType(QAbstractSpinBox.StepType.DefaultStepType)
+        self.spin_post_apply_timeout.setValue(1)
+
+        self.gridLayout_app_config.addWidget(self.spin_post_apply_timeout, 2, 3, 1, 1)
+
         self.label_start_anchor = QLabel(self.groupBox_app_config)
         self.label_start_anchor.setObjectName(u"label_start_anchor")
 
         self.gridLayout_app_config.addWidget(self.label_start_anchor, 5, 0, 1, 1)
 
-        self.edit_start_anchor = QLineEdit(self.groupBox_app_config)
-        self.edit_start_anchor.setObjectName(u"edit_start_anchor")
+        self.label_scroll_step = QLabel(self.groupBox_app_config)
+        self.label_scroll_step.setObjectName(u"label_scroll_step")
 
-        self.gridLayout_app_config.addWidget(self.edit_start_anchor, 5, 1, 1, 3)
+        self.gridLayout_app_config.addWidget(self.label_scroll_step, 1, 2, 1, 1)
 
-        self.label_end_anchor = QLabel(self.groupBox_app_config)
-        self.label_end_anchor.setObjectName(u"label_end_anchor")
+        self.label_apply_retry_count = QLabel(self.groupBox_app_config)
+        self.label_apply_retry_count.setObjectName(u"label_apply_retry_count")
 
-        self.gridLayout_app_config.addWidget(self.label_end_anchor, 6, 0, 1, 1)
+        self.gridLayout_app_config.addWidget(self.label_apply_retry_count, 3, 0, 1, 1)
 
-        self.edit_end_anchor = QLineEdit(self.groupBox_app_config)
-        self.edit_end_anchor.setObjectName(u"edit_end_anchor")
+        self.label_left_scan_width_ratio = QLabel(self.groupBox_app_config)
+        self.label_left_scan_width_ratio.setObjectName(u"label_left_scan_width_ratio")
 
-        self.gridLayout_app_config.addWidget(self.edit_end_anchor, 6, 1, 1, 3)
+        self.gridLayout_app_config.addWidget(self.label_left_scan_width_ratio, 4, 2, 1, 1)
+
+        self.use_text_editer = QCheckBox(self.groupBox_app_config)
+        self.use_text_editer.setObjectName(u"use_text_editer")
+
+        self.gridLayout_app_config.addWidget(self.use_text_editer, 7, 0, 1, 1)
+
+        self.generater_deployment_override = QCheckBox(self.groupBox_app_config)
+        self.generater_deployment_override.setObjectName(u"generater_deployment_override")
+
+        self.gridLayout_app_config.addWidget(self.generater_deployment_override, 7, 1, 1, 1)
 
 
         self.verticalLayout_app_tab.addWidget(self.groupBox_app_config)
@@ -552,20 +563,22 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Application Automation Config", None))
         self.groupBox_app_config.setTitle(QCoreApplication.translate("MainWindow", u"Application Settings", None))
-        self.label_confidence.setText(QCoreApplication.translate("MainWindow", u"confidence", None))
-        self.label_check_interval.setText(QCoreApplication.translate("MainWindow", u"check_interval", None))
-        self.label_default_timeout.setText(QCoreApplication.translate("MainWindow", u"default_timeout", None))
-        self.label_scroll_step.setText(QCoreApplication.translate("MainWindow", u"scroll_step", None))
-        self.label_page_ready_timeout.setText(QCoreApplication.translate("MainWindow", u"page_ready_timeout", None))
-        self.label_post_apply_timeout.setText(QCoreApplication.translate("MainWindow", u"post_apply_timeout", None))
-        self.label_apply_retry_count.setText(QCoreApplication.translate("MainWindow", u"apply_retry_count", None))
-        self.label_max_scroll_pages.setText(QCoreApplication.translate("MainWindow", u"max_scroll_pages", None))
-        self.label_row_half_height.setText(QCoreApplication.translate("MainWindow", u"row_half_height", None))
-        self.label_left_scan_width_ratio.setText(QCoreApplication.translate("MainWindow", u"left_scan_width_ratio", None))
-        self.label_start_anchor.setText(QCoreApplication.translate("MainWindow", u"start_anchor", None))
-        self.edit_start_anchor.setText(QCoreApplication.translate("MainWindow", u"Job - Country:", None))
         self.label_end_anchor.setText(QCoreApplication.translate("MainWindow", u"end_anchor", None))
+        self.label_post_apply_timeout.setText(QCoreApplication.translate("MainWindow", u"post_apply_timeout", None))
+        self.label_row_half_height.setText(QCoreApplication.translate("MainWindow", u"row_half_height", None))
+        self.label_check_interval.setText(QCoreApplication.translate("MainWindow", u"check_interval", None))
+        self.label_confidence.setText(QCoreApplication.translate("MainWindow", u"confidence", None))
         self.edit_end_anchor.setText(QCoreApplication.translate("MainWindow", u"Targeted Degrees and Disciplines:", None))
+        self.edit_start_anchor.setText(QCoreApplication.translate("MainWindow", u"Job - Country:", None))
+        self.label_page_ready_timeout.setText(QCoreApplication.translate("MainWindow", u"page_ready_timeout", None))
+        self.label_max_scroll_pages.setText(QCoreApplication.translate("MainWindow", u"max_scroll_pages", None))
+        self.label_default_timeout.setText(QCoreApplication.translate("MainWindow", u"default_timeout", None))
+        self.label_start_anchor.setText(QCoreApplication.translate("MainWindow", u"start_anchor", None))
+        self.label_scroll_step.setText(QCoreApplication.translate("MainWindow", u"scroll_step", None))
+        self.label_apply_retry_count.setText(QCoreApplication.translate("MainWindow", u"apply_retry_count", None))
+        self.label_left_scan_width_ratio.setText(QCoreApplication.translate("MainWindow", u"left_scan_width_ratio", None))
+        self.use_text_editer.setText(QCoreApplication.translate("MainWindow", u"use text editor", None))
+        self.generater_deployment_override.setText(QCoreApplication.translate("MainWindow", u"generater deployment override", None))
         self.button_load_app_config.setText(QCoreApplication.translate("MainWindow", u"Load Config", None))
         self.button_save_app_config.setText(QCoreApplication.translate("MainWindow", u"Save Config", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_app_config), QCoreApplication.translate("MainWindow", u"App Config", None))
